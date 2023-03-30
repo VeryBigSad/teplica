@@ -1,5 +1,7 @@
+from datetime import datetime
 import socket
-import math
+
+import sqlite3
 
 from constants import MAX_TEMP, MIN_TEMP, MODE_AUTOMATIC, MODE_MANUAL
 from manual_settings import ManualSettings
@@ -13,7 +15,7 @@ class Server:
 
     instance = None
 
-    def __init__(self, hostname, port):
+    def __init__(self, hostname, port, database_file):
         """Creates a Server object
 
         Args:
@@ -22,6 +24,8 @@ class Server:
         """
         self.hostname = hostname
         self.port = port
+
+        self.conn = sqlite3.connect(database_file)
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.hostname, self.port))
@@ -98,6 +102,7 @@ class Server:
         """Processes any request coming from 2 of the arduinos"""
         data = clientsocket.recv(1024).decode()
         protocol = Protocol.get_protocol_from_data(data)
+        self.record_protocol(protocol)
         if protocol.arduino_id == 1:
             # return because no reason to continue or answer anything,
             # this module doesn't have antyhing attached
@@ -111,6 +116,17 @@ class Server:
         print(f"Температура внутри: {self.temperature_inside}")
         data = self.get_data_to_respond()
         clientsocket.sendall(data)
+
+    def record_protocol(self, protocol: Protocol) -> None:
+        self.conn.execute("INSERT INTO temperature_readings VALUES (?, ?, ?)", (protocol.temperature, protocol.arduino_id, datetime.now()))
+    
+    def print_all_protocols(self):
+        print("list all protocols")
+        cursor = self.conn.execute("SELECT * FROM temperature_readings")
+        for row in cursor:
+            print(row)
+        
+        print("end")
 
     def get_ventil_power(self):
         return min(10, self.temperature_outside - self.temperature_inside) * 10
