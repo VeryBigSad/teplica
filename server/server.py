@@ -1,7 +1,8 @@
 from datetime import datetime
 import socket
-
 import sqlite3
+
+# import matplotlib.pyplot as plt
 
 from constants import MAX_TEMP, MIN_TEMP, MODE_AUTOMATIC, MODE_MANUAL
 from manual_settings import ManualSettings
@@ -31,13 +32,13 @@ class Server:
         self.socket.bind((self.hostname, self.port))
 
         self.mode = MODE_AUTOMATIC
-        self.settings = None
 
         self.temperature_outside = None
         self.temperature_inside = None
         self.ventil_power = None
         self.is_servo_on = None
 
+        self.set_settings()
         if Server.instance is not None:
             raise ValueError(
                 "Warning! 2 or more instances of Server running. This is not allowed!")
@@ -118,10 +119,37 @@ class Server:
         clientsocket.sendall(data)
 
     def record_protocol(self, protocol: Protocol) -> None:
-        self.conn.execute("INSERT INTO temperature_readings VALUES (?, ?, ?)", (protocol.temperature, protocol.arduino_id, datetime.now()))
+        self.conn.execute("INSERT INTO temperature_readings (temperature, arduino_id, created_at) VALUES (?, ?, ?)", (protocol.temperature, protocol.arduino_id, datetime.now()))
+        self.conn.commit()
+
+    def create_picture(self, name):
+        pass
+        # # Retrieve the last 5 minutes of temperature readings from the two arduinos
+        # five_minutes_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
+        # query = "SELECT temperature, arduino_id, created_at FROM temperature_readings WHERE created_at >= ? AND arduino_id <= 2"
+        # result = self.conn.execute(query, (five_minutes_ago,)).fetchall()
+
+        # # Separate the data by arduino ID
+        # arduino1_data = []
+        # arduino2_data = []
+        # for row in result:
+        #     if row[1] == 1:
+        #         arduino1_data.append(row)
+        #     elif row[1] == 2:
+        #         arduino2_data.append(row)
+
+        # # Create a plot of the data
+        # plt.plot([row[2] for row in arduino1_data], [row[0] for row in arduino1_data], label='Arduino 1')
+        # plt.plot([row[2] for row in arduino2_data], [row[0] for row in arduino2_data], label='Arduino 2')
+        # plt.xlabel('Time')
+        # plt.ylabel('Temperature')
+        # plt.legend()
+
+        # # Save the plot to a file
+        # plt.savefig(f'{name}.png')
     
     def print_all_protocols(self):
-        print("list all protocols")
+        print("list all rows")
         cursor = self.conn.execute("SELECT * FROM temperature_readings")
         for row in cursor:
             print(row)

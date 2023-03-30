@@ -11,12 +11,11 @@ def main():
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
     # start telegram bot in a separate thread
-    # bot = TeplicaBot(TELEGRAM_TOKEN)
-    # bot.start_polling_in_a_thread()
+    bot = TeplicaBot(TELEGRAM_TOKEN)
+    bot.start_polling_in_a_thread()
 
     # start server
     server = Server(HOSTNAME, PORT, "db.sqlite3")
-    server.print_all_protocols()
     server.start_listening()
 
     while True:

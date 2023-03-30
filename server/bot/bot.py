@@ -2,7 +2,7 @@ from threading import Thread
 
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater, CallbackQueryHandler, ConversationHandler
 
-from bot.handlers import change_servo_callback, change_mode_callback, start, help_command, update_data_callback, ventil_callback, ventil_text
+from bot.handlers import change_servo_callback, change_mode_callback, start, help_command, update_data_callback, ventil_callback, ventil_text, picture_handler
 
 
 class TeplicaBot:
@@ -18,6 +18,7 @@ class TeplicaBot:
         self.dispatcher.add_handler(CallbackQueryHandler(change_servo_callback, pattern="change_servo"))
         self.dispatcher.add_handler(MessageHandler(Filters.text, ventil_text))
         self.dispatcher.add_handler(CallbackQueryHandler(ventil_callback, pattern="ventil"))
+        self.dispatcher.add_handler(CommandHandler("pic", picture_handler))
 
     def start_polling(self) -> None:
         """Starts polling the telegram bot"""

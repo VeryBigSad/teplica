@@ -52,8 +52,8 @@ def format_text_using_instance(instance):
     text = f"""🌱<b>Теплица Спартана</b>
 <i>Режим</i>: {mode_text}
 
-🌡️ <i>Температура снаружи</i>: {instance.temperature_inside}°C
-🌡️ <i>Температура внутри</i>: {instance.temperature_outside}°C
+🌡️ <i>Температура снаружи</i>: {instance.temperature_outside}°C
+🌡️ <i>Температура внутри</i>: {instance.temperature_inside}°C
 💨 <i>Вентилятор</i>: {ventilator_text}
 🪟 <i>Форточка</i>: {servo_text}
 """
@@ -157,3 +157,8 @@ def update_data_callback(update: Update, context: CallbackContext) -> None:
         )
     except BadRequest:
         pass
+
+
+def picture_handler(update: Update, context: CallbackContext) -> None:
+    instance = Server.get_instance()
+    
