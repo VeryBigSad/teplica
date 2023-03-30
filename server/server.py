@@ -1,8 +1,8 @@
-from datetime import datetime
+import datetime
 import socket
 import sqlite3
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from constants import MAX_TEMP, MIN_TEMP, MODE_AUTOMATIC, MODE_MANUAL
 from manual_settings import ManualSettings
@@ -26,7 +26,7 @@ class Server:
         self.hostname = hostname
         self.port = port
 
-        self.conn = sqlite3.connect(database_file)
+        self.database_file = database_file
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.hostname, self.port))
@@ -41,7 +41,8 @@ class Server:
         self.set_settings()
         if Server.instance is not None:
             raise ValueError(
-                "Warning! 2 or more instances of Server running. This is not allowed!")
+                "Warning! 2 or more instances of Server running. This is not allowed!"
+            )
         Server.instance = self
 
     def get_mode(self) -> str:
@@ -111,7 +112,6 @@ class Server:
             print(f"Температура на улице: {self.temperature_outside}")
             return
         self.temperature_inside = protocol.temperature
-        print(protocol)
         self.is_servo_on = protocol.is_servo_on
         self.ventil_power = protocol.ventil_power
         print(f"Температура внутри: {self.temperature_inside}")
@@ -119,42 +119,37 @@ class Server:
         clientsocket.sendall(data)
 
     def record_protocol(self, protocol: Protocol) -> None:
-        self.conn.execute("INSERT INTO temperature_readings (temperature, arduino_id, created_at) VALUES (?, ?, ?)", (protocol.temperature, protocol.arduino_id, datetime.now()))
-        self.conn.commit()
+        conn = sqlite3.connect(self.database_file)
+        conn.execute("INSERT INTO temperature_readings (temperature, arduino_id, created_at) VALUES (?, ?, ?)",
+                     (protocol.temperature, protocol.arduino_id, datetime.datetime.now()))
+        conn.commit()
 
     def create_picture(self, name):
-        pass
-        # # Retrieve the last 5 minutes of temperature readings from the two arduinos
-        # five_minutes_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
-        # query = "SELECT temperature, arduino_id, created_at FROM temperature_readings WHERE created_at >= ? AND arduino_id <= 2"
-        # result = self.conn.execute(query, (five_minutes_ago,)).fetchall()
+        # Retrieve the last 5 minutes of temperature readings from the two arduinos
+        five_minutes_ago = datetime.datetime.now() - datetime.timedelta(minutes=5)
+        conn = sqlite3.connect(self.database_file)
+        query = "SELECT temperature, arduino_id, created_at FROM temperature_readings WHERE created_at >= ? AND arduino_id <= 2"
+        result = conn.execute(query, (five_minutes_ago,)).fetchall()
 
-        # # Separate the data by arduino ID
-        # arduino1_data = []
-        # arduino2_data = []
-        # for row in result:
-        #     if row[1] == 1:
-        #         arduino1_data.append(row)
-        #     elif row[1] == 2:
-        #         arduino2_data.append(row)
+        # Separate the data by arduino ID
+        arduino1_data = []
+        arduino2_data = []
+        for row in result:
+            if row[1] == 1:
+                arduino1_data.append(row)
+            elif row[1] == 2:
+                arduino2_data.append(row)
 
-        # # Create a plot of the data
-        # plt.plot([row[2] for row in arduino1_data], [row[0] for row in arduino1_data], label='Arduino 1')
-        # plt.plot([row[2] for row in arduino2_data], [row[0] for row in arduino2_data], label='Arduino 2')
-        # plt.xlabel('Time')
-        # plt.ylabel('Temperature')
-        # plt.legend()
+        # Create a plot of the data
+        plt.plot([row[2] for row in arduino1_data], [row[0] for row in arduino1_data], label='Arduino 1')
+        plt.plot([row[2] for row in arduino2_data], [row[0] for row in arduino2_data], label='Arduino 2')
+        plt.xlabel('Время')
+        plt.ylabel('Температура')
+        plt.legend()
 
-        # # Save the plot to a file
-        # plt.savefig(f'{name}.png')
-    
-    def print_all_protocols(self):
-        print("list all rows")
-        cursor = self.conn.execute("SELECT * FROM temperature_readings")
-        for row in cursor:
-            print(row)
-        
-        print("end")
+        # Save the plot to a file
+        plt.savefig(f'{name}.png')
+        plt.clf()
 
     def get_ventil_power(self):
-        return min(10, self.temperature_outside - self.temperature_inside) * 10
+        return max(min(10, self.temperature_outside - self.temperature_inside) * 10, 0)

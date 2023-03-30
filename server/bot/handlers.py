@@ -1,3 +1,6 @@
+import random
+import os
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Update
 from telegram.ext import CallbackContext
 from telegram.error import BadRequest
@@ -161,4 +164,14 @@ def update_data_callback(update: Update, context: CallbackContext) -> None:
 
 def picture_handler(update: Update, context: CallbackContext) -> None:
     instance = Server.get_instance()
+    pic_name = str(random.randint(10000, 99999))
+    instance.create_picture(pic_name)
+    update.message.reply_photo(
+        photo=open(f'{pic_name}.png', 'rb')
+    )
+
+    # delete picture
+    os.remove(f'{pic_name}.png')
+
+    
     

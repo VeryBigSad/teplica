@@ -16,9 +16,9 @@ class TeplicaBot:
         self.dispatcher.add_handler(CallbackQueryHandler(update_data_callback, pattern="update"))
         self.dispatcher.add_handler(CallbackQueryHandler(change_mode_callback, pattern="change_mode"))
         self.dispatcher.add_handler(CallbackQueryHandler(change_servo_callback, pattern="change_servo"))
+        self.dispatcher.add_handler(CommandHandler("pic", picture_handler))
         self.dispatcher.add_handler(MessageHandler(Filters.text, ventil_text))
         self.dispatcher.add_handler(CallbackQueryHandler(ventil_callback, pattern="ventil"))
-        self.dispatcher.add_handler(CommandHandler("pic", picture_handler))
 
     def start_polling(self) -> None:
         """Starts polling the telegram bot"""
