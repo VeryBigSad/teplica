@@ -37,9 +37,7 @@ void loop() {
 
 
 float get_temperature(float signal){
-  //float temperature = ((signal - 1730) / 1000) / 0.01;
   float temperature = signal / 10 - 270;
-  //float temperature = (signal/10) - 273;
   Serial.print("Temperature:");
   Serial.println(temperature);
 
