@@ -88,13 +88,13 @@ class Server:
             print(f"servo: {self.settings.is_servo_on}, ventil power: {self.settings.ventil_power}%")
             return data
 
-        if self.temperature_inside is None or self.temperature_outside is None:
+        if temp_inside is None or temp_outside is None:
             return b"0;0"
-        if self.temperature_inside > MIN_TEMP and self.temperature_inside < MAX_TEMP:
+        if temp_inside > MIN_TEMP and temp_inside < MAX_TEMP:
             # норм температура
             print("norm")
             return b"0;0"
-        if self.temperature_inside > self.temperature_outside:
+        if temp_inside > temp_outside:
             # температура внутри выше температуры снаружи, открываем форточку
             print("открыл форточку")
             return b"1;0"
