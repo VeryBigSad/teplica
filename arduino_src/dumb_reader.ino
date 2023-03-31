@@ -32,12 +32,14 @@ void loop() {
 
   String data = esp_id + ";" + "-1" + ";" + "-1" + ";" + temperature;
   send_data(data);
-  delay(3000);
+  delay(100);
 }
 
 
 float get_temperature(float signal){
+  //float temperature = ((signal - 1730) / 1000) / 0.01;
   float temperature = signal / 10 - 270;
+  //float temperature = (signal/10) - 273;
   Serial.print("Temperature:");
   Serial.println(temperature);
 
