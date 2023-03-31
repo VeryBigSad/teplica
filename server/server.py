@@ -59,14 +59,11 @@ class Server:
     def start_listening(self) -> None:
         """Make the socket start listening"""
         print(f"Слушаю на {self.port} порту")
-        self.socket.listen(2)
+        self.socket.listen(10)
 
     def wait_for_client(self) -> tuple:
         """Waiting for incoming connections"""
         return self.socket.accept()
-
-    def get_temperature_diff(self):
-        return self.temperature_inside - self.temperature_outside
 
     def set_settings(self, is_servo_on: bool = None, ventil_power: int = None) -> None:
         if is_servo_on is None:
@@ -81,6 +78,8 @@ class Server:
 
         temp_inside = self.get_inside_temp()
         temp_outside = self.get_outside_temp()
+        if temp_inside is None or temp_outside is None:
+            return b"0;0"
 
         if self.mode == MODE_MANUAL:
             # just do what we are said to do in such case
@@ -123,7 +122,7 @@ class Server:
         clientsocket.sendall(data)
 
     def record_protocol(self, protocol: Protocol) -> None:
-        print("recorded:", protocol)
+        print("recorded: ", protocol)
         conn = sqlite3.connect(self.database_file)
         conn.execute("INSERT INTO temperature_readings (temperature, arduino_id, created_at) VALUES (?, ?, ?)",
                      (protocol.temperature, protocol.arduino_id, datetime.datetime.now()))
@@ -167,9 +166,12 @@ class Server:
         eight_seconds_ago = datetime.datetime.now() - datetime.timedelta(seconds=8)
         query = "SELECT temperature FROM temperature_readings WHERE created_at >= ? and arduino_id = 1"
         result = conn.execute(query, (eight_seconds_ago,)).fetchall()
-        temperatures = [row[0] for row in result]
-        median_temperature = statistics.median(temperatures)
         conn.close()
+        temperatures = [row[0] for row in result]
+        try:
+            median_temperature = statistics.median(temperatures)
+        except statistics.StatisticsError:
+            return None
         return round(median_temperature, 2)
 
     def get_inside_temp(self):
@@ -177,9 +179,12 @@ class Server:
         eight_seconds_ago = datetime.datetime.now() - datetime.timedelta(seconds=8)
         query = "SELECT temperature FROM temperature_readings WHERE created_at >= ? and arduino_id = 2"
         result = conn.execute(query, (eight_seconds_ago,)).fetchall()
-        temperatures = [row[0] for row in result]
-        median_temperature = statistics.median(temperatures)
         conn.close()
+        temperatures = [row[0] for row in result]
+        try:
+            median_temperature = statistics.median(temperatures)
+        except statistics.StatisticsError:
+            return None
         return round(median_temperature, 2)
 
     def get_ventil_power(self):
