@@ -39,10 +39,21 @@ def get_keyboard_using_instance(instance):
 def format_text_using_instance(instance):
     servo = instance.is_servo_on
     mode_text = "Ручной" if instance.mode == MODE_MANUAL else "Умный"
+    if instance.temperature_outside is None:
+        temp_outside_text = 'Еще не измерена'
+    else:
+        temp_outside_text = f'{instance.get_outside_temp()}°C'
+    if instance.temperature_inside is None:
+        temp_inside_text = 'Еще не измерена'
+    else:
+        temp_inside_text = f"{instance.get_inside_temp()}°C"
 
-    ventilator_text = f'{instance.ventil_power}%'
-    if instance.settings.ventil_power != instance.ventil_power:
-        ventilator_text += " (вот-вот поменяется!)"
+    if instance.ventil_power is None:
+        ventilator_text = "Еще не измерен..."
+    else:
+        ventilator_text = f'{instance.ventil_power}%'
+        if instance.settings.ventil_power != instance.ventil_power:
+            ventilator_text += " (вот-вот поменяется!)"
 
     if servo:
         servo_text = 'Открыта'
@@ -55,8 +66,8 @@ def format_text_using_instance(instance):
     text = f"""🌱<b>Теплица Спартана</b>
 <i>Режим</i>: {mode_text}
 
-🌡️ <i>Температура снаружи</i>: {instance.temperature_outside}°C
-🌡️ <i>Температура внутри</i>: {instance.temperature_inside}°C
+🌡️ <i>Температура снаружи</i>: {temp_outside_text}
+🌡️ <i>Температура внутри</i>: {temp_inside_text}
 💨 <i>Вентилятор</i>: {ventilator_text}
 🪟 <i>Форточка</i>: {servo_text}
 """

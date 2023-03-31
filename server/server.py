@@ -1,6 +1,7 @@
 import datetime
 import socket
 import sqlite3
+import statistics
 
 import matplotlib.pyplot as plt
 
@@ -78,6 +79,9 @@ class Server:
     def get_data_to_respond(self) -> bytes:
         """Returns how much to turn on/off servo/ventilator"""
 
+        temp_inside = self.get_inside_temp()
+        temp_outside = self.get_outside_temp()
+
         if self.mode == MODE_MANUAL:
             # just do what we are said to do in such case
             data = bytes(f"{'1' if self.settings.is_servo_on else '0'};{self.settings.ventil_power}", encoding='ascii')
@@ -119,6 +123,7 @@ class Server:
         clientsocket.sendall(data)
 
     def record_protocol(self, protocol: Protocol) -> None:
+        print("recorded:", protocol)
         conn = sqlite3.connect(self.database_file)
         conn.execute("INSERT INTO temperature_readings (temperature, arduino_id, created_at) VALUES (?, ?, ?)",
                      (protocol.temperature, protocol.arduino_id, datetime.datetime.now()))
@@ -141,15 +146,41 @@ class Server:
                 arduino2_data.append(row)
 
         # Create a plot of the data
-        plt.plot([row[2] for row in arduino1_data], [row[0] for row in arduino1_data], label='Arduino 1')
-        plt.plot([row[2] for row in arduino2_data], [row[0] for row in arduino2_data], label='Arduino 2')
+        x1, y1 = [row[2] for row in arduino1_data], [row[0] for row in arduino1_data]
+        x2, y2 = [row[2] for row in arduino2_data], [row[0] for row in arduino2_data]
+        plt.figure(figsize=(20,7))
+        plt.plot(x1, y1, label='На улице')
+        plt.plot(x2, y2, label='Внутри')
         plt.xlabel('Время')
+        plt.locator_params(axis='x', nbins=10)
+        plt.xticks(rotation='vertical')
+        plt.margins(0.2)
         plt.ylabel('Температура')
         plt.legend()
 
         # Save the plot to a file
         plt.savefig(f'{name}.png')
         plt.clf()
+    
+    def get_outside_temp(self):
+        conn = sqlite3.connect(self.database_file)
+        eight_seconds_ago = datetime.datetime.now() - datetime.timedelta(seconds=8)
+        query = "SELECT temperature FROM temperature_readings WHERE created_at >= ? and arduino_id = 1"
+        result = conn.execute(query, (eight_seconds_ago,)).fetchall()
+        temperatures = [row[0] for row in result]
+        median_temperature = statistics.median(temperatures)
+        conn.close()
+        return round(median_temperature, 2)
+
+    def get_inside_temp(self):
+        conn = sqlite3.connect(self.database_file)
+        eight_seconds_ago = datetime.datetime.now() - datetime.timedelta(seconds=8)
+        query = "SELECT temperature FROM temperature_readings WHERE created_at >= ? and arduino_id = 2"
+        result = conn.execute(query, (eight_seconds_ago,)).fetchall()
+        temperatures = [row[0] for row in result]
+        median_temperature = statistics.median(temperatures)
+        conn.close()
+        return round(median_temperature, 2)
 
     def get_ventil_power(self):
         return max(min(10, self.temperature_outside - self.temperature_inside) * 10, 0)
