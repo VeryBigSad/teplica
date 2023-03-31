@@ -188,4 +188,7 @@ class Server:
         return round(median_temperature, 2)
 
     def get_ventil_power(self):
-        return max(min(10, self.temperature_outside - self.temperature_inside) * 10, 0)
+        thing = max(min(10, self.temperature_outside - self.temperature_inside) * 10, 0)
+        if thing < 50:
+            return 50
+        return thing
